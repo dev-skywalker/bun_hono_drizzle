@@ -1,0 +1,30 @@
+name = "bun_hono_drizzle"
+compatibility_date = "2023-12-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "bun_hono_drizzle_d1"
+database_id = "07757dd4-eb3e-41eb-8ac4-47f3a3de2ef2"
+
+[[r2_buckets]]
+binding = "MY_DATA"
+bucket_name = "mydata"
+
+[vars]
+MY_VAR = "my-variable"
+
+# [[kv_namespaces]]
+# binding = "MY_KV_NAMESPACE"
+# id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# [[r2_buckets]]
+# binding = "MY_BUCKET"
+# bucket_name = "my-bucket"
+
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "my-database"
+# database_id = ""
+
+# [ai]
+# binding = "AI"
