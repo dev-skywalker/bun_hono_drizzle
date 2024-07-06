@@ -4,7 +4,7 @@ compatibility_date = "2023-12-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "bun_hono_drizzle_d1"
-database_id = "07757dd4-eb3e-41eb-8ac4-47f3a3de2ef2"
+database_id = "1c42faf2-4240-46fc-b12a-2be21ffef462"
 
 [[r2_buckets]]
 binding = "MY_DATA"

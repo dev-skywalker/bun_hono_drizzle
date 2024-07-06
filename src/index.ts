@@ -1,82 +1,30 @@
 import { Hono } from 'hono';
-import { eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/d1';
+import userRoutes from './modules/users/user_route';
+import unitRoutes from './modules/units/unit_route';
+import productRoutes from './modules/products/product_route';
+import { cors } from 'hono/cors';
 
-import { posts } from './db/schema';
+const app = new Hono().basePath('/api');
 
-export type Env = {
-  DB: D1Database;
-  MY_DATA: R2Bucket
-};
+app.use('*', cors({
+  origin: 'http://localhost:58160',
+  allowHeaders: ['Content-Type', 'Authorization'],
+  allowMethods: ['POST', 'GET', 'OPTIONS'],
+  exposeHeaders: ['Content-Length'],
+  maxAge: 600,
+  credentials: true,
+}))
 
+app.options('*', (c) => {
+  return c.text('', 204)
+})
 
-function getHighResolutionTime() {
-  return performance.now() / 1e6; // Convert nanoseconds to milliseconds
-}
+app.get('/status', async (c) => {
+  return c.json({ status: "success" })
+})
+app.route('/users', userRoutes)
+app.route('/units', unitRoutes)
+app.route('/products', productRoutes)
 
-const api = new Hono<{ Bindings: Env }>();
-api
-  .get('/posts', async (c) => {
-    const db = drizzle(c.env.DB);
-    const result = await db.select().from(posts).all();
-    return c.json(result);
-  })
-  .get('/posts/:id', async (c) => {
-    const db = drizzle(c.env.DB);
-    const id = Number(c.req.param('id'));
-    const result = await db.select().from(posts).where(eq(posts.id, id));
-    return c.json(result);
-  })
-  .post('/posts', async (c) => {
-    const db = drizzle(c.env.DB);
-    //const { title, content } = await c.req.json();
-    const body = await c.req.parseBody();
-    let title: any = body['title'];
-    let content: any = body['content']
-    const result = await db
-      .insert(posts)
-      .values({ title, content })
-      .returning();
-    return c.json(result);
-  }).post('/upload', async (c) => {
-    const body = await c.req.parseBody();
-    let file: any = body['file'];
-    await c.env.MY_DATA.put("my-test.png", file).then((v) => {
-      console.log(v);
-      console.log("upload complete");
-    })
-    return c.json({ "status": "Success" })
-  }).get('/p', async (c) => {
-    const start = getHighResolutionTime()
-
-    // Example of some business logic
-    calculatePrimes(10000000)
-
-    const end = getHighResolutionTime()
-    const cpuTime = end - start
-    console.log(`CPU time: ${cpuTime}ms`)
-
-    return c.text('Hello, world!')
-  });
-
-function calculatePrimes(max: number) {
-  let primes = []
-  for (let i = 2; i <= max; i++) {
-    let isPrime = true
-    for (let j = 2; j * j <= i; j++) {
-      if (i % j === 0) {
-        isPrime = false
-        break
-      }
-    }
-    if (isPrime) {
-      primes.push(i)
-    }
-  }
-  return primes
-}
-
-const app = new Hono();
-app.route('/api', api);
 
 export default app;
