@@ -1,10 +1,10 @@
 import { drizzle } from "drizzle-orm/d1";
-import { units } from "../../db/schema";
+import { category } from "../../db/schema";
 import { eq, like, sql } from "drizzle-orm";
 import { Context } from "hono";
 import { Env } from "../../config/env";
 
-export const createUnit = async (c: Context<{ Bindings: Env }>) => {
+export const createCategory = async (c: Context<{ Bindings: Env }>) => {
     const db = drizzle(c.env.DB);
     const { name } = await c.req.json();
     // const body = await c.req.parseBody();
@@ -16,14 +16,14 @@ export const createUnit = async (c: Context<{ Bindings: Env }>) => {
     }
 
     // Insert new user
-    const newUnit: any = await db.insert(units).values(data).returning({
-        id: units.id, name: units.name, createdAt: units.createdAt, updatedAt: units.updatedAt
+    const newCategory: any = await db.insert(category).values(data).returning({
+        id: category.id, name: category.name, createdAt: category.createdAt, updatedAt: category.updatedAt
     });
     c.status(201);
-    return c.json(newUnit);
+    return c.json(newCategory);
 }
 
-export const updateUnit = async (c: Context<{ Bindings: Env }>) => {
+export const updateCategory = async (c: Context<{ Bindings: Env }>) => {
     const db = drizzle(c.env.DB);
     const { id, name, createdAt } = await c.req.json();
     // const body = await c.req.parseBody();
@@ -34,47 +34,47 @@ export const updateUnit = async (c: Context<{ Bindings: Env }>) => {
         updatedAt: Date.now()
     }
 
-    const updateUnit: any = await db.update(units).set(data).where(eq(units.id, id)).returning({
-        id: units.id, name: units.name, createdAt: units.createdAt, updatedAt: units.updatedAt
+    const updateCategory: any = await db.update(category).set(data).where(eq(category.id, id)).returning({
+        id: category.id, name: category.name, createdAt: category.createdAt, updatedAt: category.updatedAt
     });
     c.status(201);
-    return c.json(updateUnit);
+    return c.json(updateCategory);
 }
 
-export const getAllUnits = async (c: Context) => {
+export const getAllCategory = async (c: Context) => {
     const db = drizzle(c.env.DB);
-    const result = await db.select().from(units).all();
+    const result = await db.select().from(category).all();
     return c.json(result);
 }
 
-export const deleteUnit = async (c: Context) => {
+export const deleteCategory = async (c: Context) => {
     const { id } = await c.req.json();
     const db = drizzle(c.env.DB);
 
-    const query = await db.delete(units).where(eq(units.id, id)).returning({ deletedId: units.id });
+    const query = await db.delete(category).where(eq(category.id, id)).returning({ deletedId: category.id });
     return c.json(query)
 }
 
 
-export const deleteAllUnits = async (c: Context) => {
+export const deleteAllCategory = async (c: Context) => {
     const db = drizzle(c.env.DB);
-    const result = await db.select().from(units).all();
+    const result = await db.select().from(category).all();
     result.map(async (i) => {
-        await db.delete(units).where(eq(units.id, i.id));
+        await db.delete(category).where(eq(category.id, i.id));
     })
     return c.json({ message: "OK" });
 }
 
-export const getPaginateUnits = async (c: Context) => {
+export const getPaginateCategory = async (c: Context) => {
     const { filter, limit, offset, sortBy, sortOrder } = c.req.query();
     const db = drizzle(c.env.DB);
 
     // Base query
-    let query: any = db.select().from(units);
+    let query: any = db.select().from(category);
 
     // Apply filter if present
     if (filter) {
-        query = query.where(like(units.name, `%${filter}%`));
+        query = query.where(like(category.name, `%${filter}%`));
     }
 
     // Get the total number of filtered records
@@ -89,18 +89,18 @@ export const getPaginateUnits = async (c: Context) => {
     let que;
     if (sortBy && sortOrder) {
         if (sortBy === "name" && sortOrder === "desc") {
-            que = sql`${units.name} desc nulls first`;
+            que = sql`${category.name} desc nulls first`;
         } else if (sortBy === "name" && sortOrder === "asc") {
-            que = sql`${units.name} asc nulls first`;
+            que = sql`${category.name} asc nulls first`;
         } else if (sortBy === "id" && sortOrder === "desc") {
-            que = sql`${units.id} desc nulls first`;
+            que = sql`${category.id} desc nulls first`;
         } else if (sortBy === "id" && sortOrder === "asc") {
-            que = sql`${units.id} asc nulls first`;
+            que = sql`${category.id} asc nulls first`;
         } else {
-            que = sql`${units.id} asc nulls first`;
+            que = sql`${category.id} asc nulls first`;
         }
     } else {
-        que = sql`${units.id} asc nulls first`;
+        que = sql`${category.id} asc nulls first`;
     }
 
     // Apply sorting, limit, and offset
@@ -114,8 +114,8 @@ export const getPaginateUnits = async (c: Context) => {
     // const transformedData: any = {
     //     totalRecords: totalRecords,
     //     data: results.map((item: any) => ({
-    //         id: item.units.id,
-    //         name: item.units.name
+    //         id: item.categorys.id,
+    //         name: item.categorys.name
 
     //     })),
     // };

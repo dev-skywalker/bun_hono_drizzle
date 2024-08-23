@@ -3,6 +3,7 @@ import userRoutes from './modules/users/user_route';
 import unitRoutes from './modules/units/unit_route';
 import productRoutes from './modules/products/product_route';
 import { cors } from 'hono/cors';
+import categoryRoutes from './modules/category/category_route';
 
 const app = new Hono().basePath('/api');
 
@@ -25,6 +26,7 @@ app.get('/status', async (c) => {
 app.route('/users', userRoutes)
 app.route('/units', unitRoutes)
 app.route('/products', productRoutes)
+app.route('/category', categoryRoutes)
 
 
 export default app;
