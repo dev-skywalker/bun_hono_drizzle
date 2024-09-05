@@ -9,7 +9,7 @@ const unitRoutes = new Hono<{ Bindings: Env }>();
 
 unitRoutes.post("/", zValidator("json", unitSchema), createUnit)
 
-unitRoutes.put("/", zValidator('json', unitSchema), updateUnit)
+unitRoutes.put("/", updateUnit)
 
 unitRoutes.get('/all', getAllUnits)
 

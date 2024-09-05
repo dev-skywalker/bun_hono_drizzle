@@ -4,6 +4,9 @@ import unitRoutes from './modules/units/unit_route';
 import productRoutes from './modules/products/product_route';
 import { cors } from 'hono/cors';
 import categoryRoutes from './modules/category/category_route';
+import productCategoryRoutes from './modules/productCategory/product_category_route';
+import brandRoutes from './modules/brands/brand_route';
+import imageRoutes from './modules/images/image_route';
 
 const app = new Hono().basePath('/api');
 
@@ -25,8 +28,11 @@ app.get('/status', async (c) => {
 })
 app.route('/users', userRoutes)
 app.route('/units', unitRoutes)
+app.route('/brands', brandRoutes)
 app.route('/products', productRoutes)
 app.route('/category', categoryRoutes)
+app.route('/product_category', productCategoryRoutes)
+app.route('/image', imageRoutes)
 
 
 export default app;

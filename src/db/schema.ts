@@ -12,8 +12,8 @@ export const users = sqliteTable('users', {
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
-    inventoryInTransactions: many(inventoryInTransactions),
-    inventoryOutTransactions: many(inventoryOutTransactions)
+    // inventoryInTransactions: many(inventoryInTransactions),
+    // inventoryOutTransactions: many(inventoryOutTransactions)
 }));
 
 export const products = sqliteTable("products", {
@@ -21,11 +21,17 @@ export const products = sqliteTable("products", {
     name: text("name").notNull(),
     barcode: text("barcode", { length: 256 }),
     description: text("description"),
+    productCost: integer('product_cost'),
+    productPrice: integer('product_price'),
+    stockAlert: integer('stock_alert'),
+    quantityLimit: integer('quantity_limit'),
+    expireDate: integer('expire_date'),
     imageUrl: text("image_url", { length: 256 }),
     tabletOnCard: integer("tablet_on_card"),
     cardOnBox: integer("card_on_box"),
     isLocalProduct: integer('is_local_product', { mode: 'boolean' }),
     unitId: integer("unit_id").references(() => units.id),
+    brandId: integer("brand_id").references(() => brands.id),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),
 });
@@ -35,17 +41,20 @@ export const productsRelations = relations(products, ({ one, many }) => ({
         fields: [products.unitId],
         references: [units.id]
     }),
+    brand: one(brands, {
+        fields: [products.brandId],
+        references: [brands.id]
+    }),
     productCategories: many(productCategories),
-    inventoryInTransactionDetails: many(inventoryInTransactionDetails),
-    inventoryStocks: many(inventoryStocks),
-    inventoryOutTransactionDetails: many(inventoryOutTransactionDetails),
-    storeStocks: many(storeStocks),
+    purchaseItems: many(purchaseItems),
+    manageStocks: many(manageStocks)
 }));
 
 
 export const units = sqliteTable("units", {
     id: integer("id").primaryKey({ autoIncrement: true }),
     name: text("name", { length: 256 }).notNull(),
+    description: text("description", { length: 256 }),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),
 });
@@ -54,10 +63,23 @@ export const unitsRelations = relations(units, ({ many }) => ({
     products: many(products)
 }));
 
+export const brands = sqliteTable("brands", {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    name: text("name", { length: 256 }).notNull(),
+    description: text("description", { length: 256 }),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+});
+
+export const brandsRelations = relations(brands, ({ many }) => ({
+    products: many(products)
+}));
+
 
 export const category = sqliteTable("category", {
     id: integer("id").primaryKey({ autoIncrement: true }),
     name: text("name", { length: 256 }).notNull(),
+    description: text("description", { length: 256 }),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),
 });
@@ -85,258 +107,100 @@ export const productCategoriesRelations = relations(productCategories, ({ one })
     })
 }));
 
-
-export const locations = sqliteTable("locations", {
+export const warehouses = sqliteTable("warehouses", {
     id: integer("id").primaryKey({ autoIncrement: true }),
     name: text("name", { length: 256 }).notNull(),
+    phone: text("phone", { length: 256 }),
+    email: text("email", { length: 256 }),
     city: text("city", { length: 256 }),
-    state: text("state", { length: 256 }),
     address: text("address", { length: 256 }),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),
 });
 
-export const locationRelations = relations(locations, ({ many }) => ({
-    warehouses: many(warehouses),
-    stores: many(stores),
-    suppliers: many(suppliers)
-}));
-
-export const warehouses = sqliteTable("warehouses", {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    name: text("name", { length: 256 }).notNull(),
-    description: text("description", { length: 256 }),
-    locationId: integer("location_id").references(() => locations.id),
-    createdAt: integer("created_at").notNull(),
-    updatedAt: integer("updated_at").notNull(),
-});
-
-export const warehousesRelations = relations(warehouses, ({ one, many }) => ({
-    location: one(locations, {
-        fields: [warehouses.locationId],
-        references: [locations.id]
-    }),
-    inventoryInTransactions: many(inventoryInTransactions),
-    inventoryStocks: many(inventoryStocks)
-}));
-
-export const stores = sqliteTable("stores", {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    name: text("name", { length: 256 }).notNull(),
-    description: text("description", { length: 256 }),
-    locationId: integer("location_id").references(() => locations.id),
-    createdAt: integer("created_at").notNull(),
-    updatedAt: integer("updated_at").notNull(),
-});
-
-export const storesRelations = relations(stores, ({ one }) => ({
-    location: one(locations, {
-        fields: [stores.locationId],
-        references: [locations.id]
-    })
+export const warehousesRelations = relations(warehouses, ({ many }) => ({
+    purchases: many(purchases),
+    manageStocks: many(manageStocks)
 }));
 
 export const suppliers = sqliteTable("suppliers", {
     id: integer("id").primaryKey({ autoIncrement: true }),
     name: text("name", { length: 256 }).notNull(),
-    description: text("description", { length: 256 }),
-    locationId: integer("location_id").references(() => locations.id),
+    phone: text("phone", { length: 256 }),
+    email: text("email", { length: 256 }),
+    city: text("city", { length: 256 }),
+    address: text("address", { length: 256 }),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),
 });
 
-export const suppliersRelations = relations(suppliers, ({ one, many }) => ({
-    location: one(locations, {
-        fields: [suppliers.locationId],
-        references: [locations.id]
-    }),
-    inventoryInTransactions: many(inventoryInTransactions)
+export const suppliersRelations = relations(suppliers, ({ many }) => ({
+    purchases: many(purchases)
 }));
 
-export const inventoryInTransactions = sqliteTable("inventoryInTransactions", {
+export const purchases = sqliteTable("purchases", {
     id: integer("id").primaryKey({ autoIncrement: true }),
-    transactionDate: integer("transaction_date"),
-    description: text("description", { length: 256 }),
-    invoiceNumber: text("invoice_number", { length: 256 }),
+    date: integer("date").notNull(),
+    status: integer("status").notNull(),
+    amount: integer("amount").notNull(),
+    shipping: integer("shipping").notNull(),
     warehouseId: integer("warehouse_id").references(() => warehouses.id),
     supplierId: integer("supplier_id").references(() => suppliers.id),
-    userId: integer("user_id").references(() => users.id),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),
 });
 
-export const inventoryInTransactionsRelations = relations(inventoryInTransactions, ({ one, many }) => ({
+export const purchasesRelations = relations(purchases, ({ one, many }) => ({
     warehouse: one(warehouses, {
-        fields: [inventoryInTransactions.warehouseId],
+        fields: [purchases.warehouseId],
         references: [warehouses.id]
     }),
     supplier: one(suppliers, {
-        fields: [inventoryInTransactions.supplierId],
+        fields: [purchases.supplierId],
         references: [suppliers.id]
     }),
-    userId: one(users, {
-        fields: [inventoryInTransactions.userId],
-        references: [users.id]
-    }),
-    inventoryInTransactionDetails: many(inventoryInTransactionDetails)
+    purchaseItems: many(purchaseItems),
 }));
 
-export const inventoryInTransactionDetails = sqliteTable("inventoryInTransactionDetails", {
+export const purchaseItems = sqliteTable("purchaseItems", {
     id: integer("id").primaryKey({ autoIncrement: true }),
-    qty: integer("qty"),
-    purchasePrice: integer("purchase_price"),
-    sellingPrice: integer("selling_price"),
-    transactionId: integer("transaction_id").references(() => inventoryInTransactions.id),
+    quantity: integer("quantity").notNull(),
+    subTotal: integer("sub_total").notNull(),
     productId: integer("product_id").references(() => products.id),
-    expireDate: integer("expire_date"),
+    purchaseId: integer("purchase_id").references(() => purchases.id),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),
 });
 
-export const inventoryInTransactionDetailRelations = relations(inventoryInTransactionDetails, ({ one }) => ({
-    transaction: one(inventoryInTransactions, {
-        fields: [inventoryInTransactionDetails.transactionId],
-        references: [inventoryInTransactions.id]
-    }),
+export const purchaseItemsRelations = relations(purchaseItems, ({ one }) => ({
     product: one(products, {
-        fields: [inventoryInTransactionDetails.productId],
+        fields: [purchaseItems.productId],
         references: [products.id]
+    }),
+    purchase: one(purchases, {
+        fields: [purchaseItems.purchaseId],
+        references: [purchases.id]
     })
 }));
 
-
-export const inventoryStocks = sqliteTable("inventoryStocks", {
+export const manageStocks = sqliteTable("manageStocks", {
     id: integer("id").primaryKey({ autoIncrement: true }),
-    qtyInStock: integer("qty_instock").notNull(),
-    unitPrice: integer("unit_price"),
-    lowStockAlert: integer("low_stock_alert"),
+    quantity: integer("quantity").notNull(),
+    alert: integer("alert").notNull(),
+    productId: integer("product_id").references(() => products.id),
     warehouseId: integer("warehouse_id").references(() => warehouses.id),
-    productId: integer("product_id").references(() => products.id),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),
 });
 
-export const inventoryStockRelations = relations(inventoryStocks, ({ one, many }) => ({
+export const manageStocksRelations = relations(manageStocks, ({ one }) => ({
+    product: one(products, {
+        fields: [manageStocks.productId],
+        references: [products.id]
+    }),
     warehouse: one(warehouses, {
-        fields: [inventoryStocks.warehouseId],
+        fields: [manageStocks.warehouseId],
         references: [warehouses.id]
-    }),
-    product: one(products, {
-        fields: [inventoryStocks.productId],
-        references: [products.id]
-    }),
-    inventoryStockDetails: many(inventoryStockDetails)
-}));
-
-export const inventoryStockDetails = sqliteTable("inventoryStockDetails", {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    qty: integer("qty").notNull(),
-    purchasePrice: integer("purchase_price"),
-    sellingPrice: integer("selling_price"),
-    inventoryStockId: integer("inventory_stock_id").references(() => inventoryStocks.id),
-    expireDate: integer("expire_date"),
-    createdAt: integer("created_at").notNull(),
-    updatedAt: integer("updated_at").notNull(),
-});
-
-export const inventoryStockDetailRelations = relations(inventoryStockDetails, ({ one }) => ({
-    inventoryStock: one(inventoryStocks, {
-        fields: [inventoryStockDetails.inventoryStockId],
-        references: [inventoryStocks.id]
-    }),
-
-}));
-
-export const inventoryOutTransactions = sqliteTable("inventoryOutTransactions", {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    transactionDate: integer("transaction_date"),
-    description: text("description", { length: 256 }),
-    invoiceNumber: text("invoice_number", { length: 256 }),
-    warehouseId: integer("warehouse_id").references(() => warehouses.id),
-    userId: integer("user_id").references(() => users.id),
-    storeId: integer("store_id").references(() => stores.id),
-    createdAt: integer("created_at").notNull(),
-    updatedAt: integer("updated_at").notNull(),
-});
-
-export const inventoryOutTransactionsRelations = relations(inventoryOutTransactions, ({ one, many }) => ({
-    warehouse: one(warehouses, {
-        fields: [inventoryOutTransactions.warehouseId],
-        references: [warehouses.id]
-    }),
-    store: one(stores, {
-        fields: [inventoryOutTransactions.storeId],
-        references: [stores.id]
-    }),
-    userId: one(users, {
-        fields: [inventoryOutTransactions.userId],
-        references: [users.id]
-    }),
-    inventoryOutTransactionDetails: many(inventoryOutTransactionDetails)
-}));
-
-export const inventoryOutTransactionDetails = sqliteTable("inventoryOutTransactionDetails", {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    qty: integer("qty"),
-    purchasePrice: integer("purchase_price"),
-    sellingPrice: integer("selling_price"),
-    transactionId: integer("transaction_id").references(() => inventoryOutTransactions.id),
-    productId: integer("product_id").references(() => products.id),
-    expireDate: integer("expire_date"),
-    createdAt: integer("created_at").notNull(),
-    updatedAt: integer("updated_at").notNull(),
-});
-
-export const inventoryOutTransactionDetailRelations = relations(inventoryOutTransactionDetails, ({ one }) => ({
-    transaction: one(inventoryOutTransactions, {
-        fields: [inventoryOutTransactionDetails.transactionId],
-        references: [inventoryOutTransactions.id]
-    }),
-    product: one(products, {
-        fields: [inventoryOutTransactionDetails.productId],
-        references: [products.id]
-    })
-}));
-
-
-export const storeStocks = sqliteTable("storeStocks", {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    qtyInStock: integer("qty_instock").notNull(),
-    unitPrice: integer("unit_price"),
-    lowStockAlert: integer("low_stock_alert"),
-    storeId: integer("store_id").references(() => stores.id),
-    productId: integer("product_id").references(() => products.id),
-    createdAt: integer("created_at").notNull(),
-    updatedAt: integer("updated_at").notNull(),
-});
-
-export const storeStockRelations = relations(storeStocks, ({ one, many }) => ({
-    store: one(stores, {
-        fields: [storeStocks.storeId],
-        references: [stores.id]
-    }),
-    product: one(products, {
-        fields: [storeStocks.productId],
-        references: [products.id]
-    }),
-    storeStockDetails: many(storeStockDetails)
-}));
-
-export const storeStockDetails = sqliteTable("storeStockDetails", {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    qty: integer("qty").notNull(),
-    purchasePrice: integer("purchase_price"),
-    sellingPrice: integer("selling_price"),
-    storeStockId: integer("store_stock_id").references(() => storeStocks.id),
-    expireDate: integer("expire_date"),
-    createdAt: integer("created_at").notNull(),
-    updatedAt: integer("updated_at").notNull(),
-});
-
-export const storeStockDetailRelations = relations(storeStockDetails, ({ one }) => ({
-    storeStock: one(storeStocks, {
-        fields: [storeStockDetails.storeStockId],
-        references: [storeStocks.id]
     }),
 }));
 

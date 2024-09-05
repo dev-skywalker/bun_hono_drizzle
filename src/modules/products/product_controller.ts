@@ -1,44 +1,77 @@
 import { drizzle } from "drizzle-orm/d1";
-import { category, productCategories, products, units } from "../../db/schema";
+import { brands, category, productCategories, products, units } from "../../db/schema";
 import * as schema from "../../db/schema";
 import { asc, desc, eq, like, sql } from "drizzle-orm";
 import { Context } from "hono";
 import { Env } from "../../config/env";
 
-export const createProduct = async (c: Context<{ Bindings: Env }>) => {
+// export const createProduct = async (c: Context<{ Bindings: Env }>) => {
+//     const db = drizzle(c.env.DB);
+//     //const { name, barcode, description, tabletOnCard, cardOnBox, isLocalProduct, unitId } = await c.req.json();
+
+//     const body = await c.req.parseBody({ all: true });
+
+//     let name = body['name'].toString();
+//     let barcode = body['barcode'] ? body['barcode'].toString() : null;
+//     let description = body['description'] ? body['description'].toString() : null;
+//     let tabletOnCard = body['tabletOnCard'] ? Number(body['tabletOnCard']) : null;
+//     let cardOnBox = body['cardOnBox'] ? Number(body['cardOnBox']) : null;
+
+//     let isLocalProduct = body['isLocalProduct'] ? (body['isLocalProduct'] === "true") : false;
+
+//     //let isLocalProduct = false;
+//     let unitId = Number(body['unitId']);
+//     let catId = body['catId[]'];
+
+//     let imageUrl = "";
+
+//     if (body['file']) {
+//         const file = body['file'];
+//         if (!Array.isArray(file)) {
+//             const r2 = c.env.MY_DATA;
+//             let str = name.replace(/\s+/g, '_').toLowerCase();
+//             let res = str.split(",");
+//             let date = Date.now().toString()
+//             let key = res[0] + "-" + date
+//             const result = await r2.put(key, file)
+//             imageUrl = "https://cloud.pyaesone.com/" + result?.key
+//         }
+//     }
+
+
+//     const data = {
+//         name: name,
+//         barcode: barcode,
+//         description: description,
+//         tabletOnCard: tabletOnCard,
+//         cardOnBox: cardOnBox,
+//         isLocalProduct: isLocalProduct,
+//         unitId: unitId,
+//         imageUrl: imageUrl,
+//         createdAt: Date.now(),
+//         updatedAt: Date.now()
+//     }
+
+//     // Insert new user
+//     const newProduct: any = await db.insert(products).values(data).returning({
+//         id: products.id
+//     });
+//     if (catId) {
+//         if (Array.isArray(catId)) {
+//             for (let i = 0; i < catId.length; i++) {
+//                 await db.insert(productCategories).values({ productId: Number(newProduct[0].id), categoryId: Number(catId[i]) });
+//             }
+//         }
+//     }
+
+//     //await db.insert
+//     c.status(201);
+//     return c.json({ productId: Number(newProduct[0].id) });
+// }
+
+export const createProductJson = async (c: Context<{ Bindings: Env }>) => {
     const db = drizzle(c.env.DB);
-    //const { name, barcode, description, tabletOnCard, cardOnBox, isLocalProduct, unitId } = await c.req.json();
-
-    const body = await c.req.parseBody({ all: true });
-
-    let name = body['name'].toString();
-    let barcode = body['barcode'] ? body['barcode'].toString() : null;
-    let description = body['description'] ? body['description'].toString() : null;
-    let tabletOnCard = body['tabletOnCard'] ? Number(body['tabletOnCard']) : null;
-    let cardOnBox = body['cardOnBox'] ? Number(body['cardOnBox']) : null;
-
-    let isLocalProduct = body['isLocalProduct'] ? (body['isLocalProduct'] === "true") : false;
-
-    //let isLocalProduct = false;
-    let unitId = Number(body['unitId']);
-    let catId = body['catId[]'];
-
-    let imageUrl = "";
-
-    if (body['file']) {
-        const file = body['file'];
-        if (!Array.isArray(file)) {
-            const r2 = c.env.MY_DATA;
-            let str = name.replace(/\s+/g, '_').toLowerCase();
-            let res = str.split(",");
-            let date = Date.now().toString()
-            let key = res[0] + "-" + date
-            const result = await r2.put(key, file)
-            imageUrl = "https://cloud.pyaesone.com/" + result?.key
-        }
-    }
-
-
+    const { name, barcode, description, stockAlert, expireDate, quantityLimit, tabletOnCard, cardOnBox, isLocalProduct, productCost, productPrice, unitId, brandId, catId, imageUrl } = await c.req.json();
     const data = {
         name: name,
         barcode: barcode,
@@ -46,16 +79,24 @@ export const createProduct = async (c: Context<{ Bindings: Env }>) => {
         tabletOnCard: tabletOnCard,
         cardOnBox: cardOnBox,
         isLocalProduct: isLocalProduct,
+        productCost: productCost,
+        productPrice: productPrice,
+        stockAlert: stockAlert,
+        quantityLimit: quantityLimit,
+        expireDate: expireDate,
         unitId: unitId,
+        brandId: brandId,
         imageUrl: imageUrl,
         createdAt: Date.now(),
         updatedAt: Date.now()
     }
-
-    // Insert new user
     const newProduct: any = await db.insert(products).values(data).returning({
         id: products.id
     });
+    if (newProduct.length === 0) {
+        c.status(404);
+        return c.json({ message: "Product not found" });
+    }
     if (catId) {
         if (Array.isArray(catId)) {
             for (let i = 0; i < catId.length; i++) {
@@ -64,65 +105,54 @@ export const createProduct = async (c: Context<{ Bindings: Env }>) => {
         }
     }
 
-    //await db.insert
     c.status(201);
-    return c.json({ productId: Number(newProduct[0].id) });
+    return c.json(newProduct[0]);
 }
 
-
-export const updateProduct = async (c: Context<{ Bindings: Env }>) => {
+export const updateProductJson = async (c: Context<{ Bindings: Env }>) => {
     const db = drizzle(c.env.DB);
-    //const { name, barcode, description, tabletOnCard, cardOnBox, isLocalProduct, unitId } = await c.req.json();
+    const { id, name, barcode, description, tabletOnCard, cardOnBox, isLocalProduct, unitId, brandId, catId, imageUrl } = await c.req.json();
 
-    const body = await c.req.parseBody();
+    const updatedAt = Date.now();
 
-    let id = Number(body['id']);
-    let createdAt = Number(body['createdAt']);
-    let name = body['name'].toString();
-    let barcode = body['barcode'] ? body['barcode'].toString() : null;
-    let description = body['description'] ? body['description'].toString() : null;
-    let tabletOnCard = body['tabletOnCard'] ? Number(body['tabletOnCard']) : null;
-    let cardOnBox = body['cardOnBox'] ? Number(body['cardOnBox']) : null;
-    let image = body['imageUrl'] ? body['imageUrl'].toString() : null;
+    // Update existing product by id
+    const updatedProduct: any = await db
+        .update(products)
+        .set({
+            name: name,
+            barcode: barcode,
+            description: description,
+            tabletOnCard: tabletOnCard,
+            cardOnBox: cardOnBox,
+            isLocalProduct: isLocalProduct,
+            unitId: unitId,
+            brandId: brandId,
+            imageUrl: imageUrl,
+            updatedAt: updatedAt,
+        })
+        .where(eq(products.id, id))
+        .returning({
+            id: products.id
+        });
 
-    let isLocalProduct = body['isLocalProduct'] ? (body['isLocalProduct'] === "true") : false;
-
-    //let isLocalProduct = false;
-    let unitId = Number(body['unitId']);
-
-    let imageUrl = "";
-
-    if (body['file']) {
-        const file = body['file'];
-        const r2 = c.env.MY_DATA;
-        let str = name.replace(/\s+/g, '_').toLowerCase();
-        let res = str.split(",");
-        let date = Date.now().toString()
-        let key = res[0] + "-" + date
-        const result = await r2.put(key, file)
-        imageUrl = "https://cloud.pyaesone.com/" + result?.key
-
+    if (updatedProduct.length === 0) {
+        c.status(404);
+        return c.json({ message: "Product not found" });
     }
 
-    const data = {
-        name: name,
-        barcode: barcode,
-        description: description,
-        tabletOnCard: tabletOnCard,
-        cardOnBox: cardOnBox,
-        isLocalProduct: isLocalProduct,
-        unitId: unitId,
-        imageUrl: image != null ? image : imageUrl,
-        createdAt: createdAt,
-        updatedAt: Date.now()
+    // Update product categories if provided
+    if (catId && Array.isArray(catId)) {
+        // Remove existing categories for the product
+        await db.delete(productCategories).where(eq(productCategories.productId, id));
+
+        // Insert the new categories
+        for (let i = 0; i < catId.length; i++) {
+            await db.insert(productCategories).values({ productId: Number(id), categoryId: Number(catId[i]) });
+        }
     }
 
-    // Insert new user
-    const updateProduct: any = await db.update(products).set(data).where(eq(products.id, id)).returning({
-        id: products.id, name: products.name, imageUrl: products.imageUrl, createdAt: products.createdAt, updatedAt: products.updatedAt
-    });
-    c.status(201);
-    return c.json(updateProduct);
+    c.status(200);
+    return c.json(updatedProduct[0]);
 }
 
 
@@ -171,6 +201,7 @@ export const getAllProductCategory = async (c: Context) => {
             orderBy: [que],
             with: {
                 unit: true,
+                brand: true,
                 productCategories: {
                     columns: {},
                     with: {
@@ -203,23 +234,25 @@ export const getAllProductCategory = async (c: Context) => {
 
 export const deleteProduct = async (c: Context) => {
     const { id } = await c.req.json();
-    // let id = Number(body['id']);
     const db = drizzle(c.env.DB);
 
     const query = await db.delete(products).where(eq(products.id, id)).returning({ deletedId: products.id });
-    return c.json(query)
+    if (query.length === 0) {
+        c.status(404);
+        return c.json({ message: "Product not found" });
+    }
+
+    return c.json(query[0])
 }
 
 
 export const deleteAllProducts = async (c: Context) => {
     const db = drizzle(c.env.DB);
-    const result = await db.select().from(products).all();
-    result.map(async (i) => {
-        await db.delete(products).where(eq(products.id, i.id));
-    })
-    return c.json({ message: "OK" });
-}
+    await db.delete(products).execute();
 
+    c.status(200);
+    return c.json({ message: "All product deleted successfully" });
+}
 
 
 
@@ -264,6 +297,7 @@ export const getPaginateProducts = async (c: Context) => {
     // Apply sorting, limit, and offset
     query = query
         .innerJoin(units, eq(products.unitId, units.id))
+        .innerJoin(brands, eq(products.brandId, brands.id))
         .orderBy(que)
         .limit(Number(limit))
         .offset(Number(offset));

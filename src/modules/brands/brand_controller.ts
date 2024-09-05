@@ -1,10 +1,10 @@
 import { drizzle } from "drizzle-orm/d1";
-import { units } from "../../db/schema";
 import { eq, like, sql } from "drizzle-orm";
 import { Context } from "hono";
 import { Env } from "../../config/env";
+import { brands } from "../../db/schema";
 
-export const createUnit = async (c: Context<{ Bindings: Env }>) => {
+export const createBrand = async (c: Context<{ Bindings: Env }>) => {
     const db = drizzle(c.env.DB);
     const { name, description } = await c.req.json();
 
@@ -16,23 +16,21 @@ export const createUnit = async (c: Context<{ Bindings: Env }>) => {
     }
 
     // Insert new user
-    const newUnit: any = await db.insert(units).values(data).returning({
-        id: units.id
+    const newBrand: any = await db.insert(brands).values(data).returning({
+        id: brands.id
     });
 
-    if (newUnit.length === 0) {
+    if (newBrand.length === 0) {
         c.status(404);
-        return c.json({ message: "Unit not found" });
+        return c.json({ message: "Brand not found" });
     }
-
     c.status(201);
-    return c.json(newUnit[0]);
+    return c.json(newBrand[0]);
 }
 
-export const updateUnit = async (c: Context<{ Bindings: Env }>) => {
+export const updateBrand = async (c: Context<{ Bindings: Env }>) => {
     const db = drizzle(c.env.DB);
     const { id, name, description, createdAt } = await c.req.json();
-    // const body = await c.req.parseBody();
 
     const data = {
         name: name,
@@ -41,57 +39,54 @@ export const updateUnit = async (c: Context<{ Bindings: Env }>) => {
         updatedAt: Date.now()
     }
 
-    const updateUnit: any = await db.update(units).set(data).where(eq(units.id, id)).returning({
-        id: units.id
+    const updateBrand: any = await db.update(brands).set(data).where(eq(brands.id, id)).returning({
+        id: brands.id
     });
-
-    if (updateUnit.length === 0) {
+    if (updateBrand.length === 0) {
         c.status(404);
-        return c.json({ message: "Unit not found" });
+        return c.json({ message: "Brand not found" });
     }
-
     c.status(200);
-    return c.json(updateUnit[0]);
+    return c.json(updateBrand[0]);
 }
 
-export const getAllUnits = async (c: Context) => {
+export const getAllBrands = async (c: Context) => {
     const db = drizzle(c.env.DB);
-    const result = await db.select().from(units).all();
+    const result = await db.select().from(brands).all();
     return c.json(result);
 }
 
-export const deleteUnit = async (c: Context) => {
+export const deleteBrand = async (c: Context) => {
     const { id } = await c.req.json();
     const db = drizzle(c.env.DB);
 
-    const query = await db.delete(units).where(eq(units.id, id)).returning({ deletedId: units.id });
-
+    const query = await db.delete(brands).where(eq(brands.id, id)).returning({ deletedId: brands.id });
     if (query.length === 0) {
         c.status(404);
-        return c.json({ message: "Unit not found" });
+        return c.json({ message: "Brand not found" });
     }
     return c.json(query[0])
 }
 
 
-export const deleteAllUnits = async (c: Context) => {
+export const deleteAllBands = async (c: Context) => {
     const db = drizzle(c.env.DB);
-    await db.delete(units).execute();
+    await db.delete(brands).execute();
 
     c.status(200);
-    return c.json({ message: "All unit deleted successfully" });
+    return c.json({ message: "All brands deleted successfully" });
 }
 
-export const getPaginateUnits = async (c: Context) => {
+export const getPaginateBrands = async (c: Context) => {
     const { filter, limit, offset, sortBy, sortOrder } = c.req.query();
     const db = drizzle(c.env.DB);
 
     // Base query
-    let query: any = db.select().from(units);
+    let query: any = db.select().from(brands);
 
     // Apply filter if present
     if (filter) {
-        query = query.where(like(units.name, `%${filter}%`));
+        query = query.where(like(brands.name, `%${filter}%`));
     }
 
     // Get the total number of filtered records
@@ -106,18 +101,18 @@ export const getPaginateUnits = async (c: Context) => {
     let que;
     if (sortBy && sortOrder) {
         if (sortBy === "name" && sortOrder === "desc") {
-            que = sql`${units.name} desc nulls first`;
+            que = sql`${brands.name} desc nulls first`;
         } else if (sortBy === "name" && sortOrder === "asc") {
-            que = sql`${units.name} asc nulls first`;
+            que = sql`${brands.name} asc nulls first`;
         } else if (sortBy === "id" && sortOrder === "desc") {
-            que = sql`${units.id} desc nulls first`;
+            que = sql`${brands.id} desc nulls first`;
         } else if (sortBy === "id" && sortOrder === "asc") {
-            que = sql`${units.id} asc nulls first`;
+            que = sql`${brands.id} asc nulls first`;
         } else {
-            que = sql`${units.id} asc nulls first`;
+            que = sql`${brands.id} asc nulls first`;
         }
     } else {
-        que = sql`${units.id} asc nulls first`;
+        que = sql`${brands.id} asc nulls first`;
     }
 
     // Apply sorting, limit, and offset
@@ -126,16 +121,6 @@ export const getPaginateUnits = async (c: Context) => {
         .offset(Number(offset));
 
     const results = await query.execute();
-
-    // Transform data
-    // const transformedData: any = {
-    //     totalRecords: totalRecords,
-    //     data: results.map((item: any) => ({
-    //         id: item.units.id,
-    //         name: item.units.name
-
-    //     })),
-    // };
 
     return c.json({ totalRecords: totalRecords, data: results });
 };

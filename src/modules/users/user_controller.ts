@@ -8,16 +8,13 @@ import { Env } from "../../config/env";
 export const userRegister = async (c: Context<{ Bindings: Env }>) => {
     const db = drizzle(c.env.DB);
     const { email, password, role, isActive } = await c.req.json();
-    // const body = await c.req.parseBody();
-
-    // let email = body["email"].toString();
-    // let password = body["password"].toString();
-    // let role = body["role"].toString();
-    // let isActive = (body["isActive"].toString() === "true");
+    const userExists = await db.select().from(users).where(eq(users.email, email));
+    if (userExists[0]) {
+        c.status(409);
+        return c.json({ message: 'User already exists' });
+    }
 
     const hash = await hashPassword(password)
-    // console.log(hash)
-
     // Validate the role
     const validRoles = ["admin", "user"];
     if (!validRoles.includes(role)) {
@@ -25,11 +22,7 @@ export const userRegister = async (c: Context<{ Bindings: Env }>) => {
         return c.json({ message: 'Invalid role' });
     }
 
-    const userExists = await db.select().from(users).where(eq(users.email, email));
-    if (userExists[0]) {
-        c.status(409);
-        return c.json({ message: 'User already exists' });
-    }
+
     const data = {
         email: email,
         password: hash,
@@ -41,17 +34,17 @@ export const userRegister = async (c: Context<{ Bindings: Env }>) => {
 
     // Insert new user
     const newUser: any = await db.insert(users).values(data).returning({ id: users.id, email: users.email, role: users.role });
+    if (newUser.length === 0) {
+        c.status(404);
+        return c.json({ message: "User not found" });
+    }
+
     c.status(201);
-    return c.json(newUser);
+    return c.json(newUser[0]);
 }
 
 export const userLogin = async (c: Context) => {
     const { email, password } = await c.req.json();
-    // const body = await c.req.parseBody();
-    // console.log("Hey Now")
-    // let email = body['email'].toString();
-    // let password = body['password'].toString()
-
     const db = drizzle(c.env.DB);
     const user = await db.select().from(users).where(eq(users.email, email));
     console.log(user)
@@ -112,9 +105,8 @@ async function verifyPassword(inputPassword: string, storedHash: string) {
 
 export const deleteAllUsers = async (c: Context) => {
     const db = drizzle(c.env.DB);
-    const result = await db.select().from(users).all();
-    result.map(async (i) => {
-        await db.delete(users).where(eq(users.id, i.id));
-    })
-    return c.json({ message: "OK" });
+    await db.delete(users).execute();
+
+    c.status(200);
+    return c.json({ message: "All users deleted successfully" });
 }

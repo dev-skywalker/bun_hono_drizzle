@@ -9,7 +9,7 @@ const categoryRoutes = new Hono<{ Bindings: Env }>();
 
 categoryRoutes.post("/", zValidator("json", categorySchema), createCategory)
 
-categoryRoutes.put("/", zValidator('json', categorySchema), updateCategory)
+categoryRoutes.put("/", updateCategory)
 
 categoryRoutes.get('/all', getAllCategory)
 

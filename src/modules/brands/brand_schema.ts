@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const unitSchema = z.object({
+export const brandSchema = z.object({
     name: z.string(),
     description: z.string().optional()
 });

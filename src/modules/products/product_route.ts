@@ -1,14 +1,14 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { Env } from "../../config/env";
-import { createProduct, deleteAllProducts, deleteProduct, getAllProductCategory, getAllProducts, getPaginateProducts, updateProduct } from "./product_controller";
+import { createProductJson, deleteAllProducts, deleteProduct, getAllProductCategory, getAllProducts, getPaginateProducts, updateProductJson } from "./product_controller";
 import { productSchema } from "./product_schema";
 
 const productRoutes = new Hono<{ Bindings: Env }>();
 
-productRoutes.post("/", zValidator('form', productSchema), createProduct)
+productRoutes.post("/", zValidator('json', productSchema), createProductJson)
 
-productRoutes.put("/", zValidator('form', productSchema), updateProduct)
+productRoutes.put("/", updateProductJson)
 
 productRoutes.get('/all', getAllProducts)
 
