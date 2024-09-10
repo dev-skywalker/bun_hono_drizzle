@@ -12,8 +12,7 @@ export const users = sqliteTable('users', {
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
-    // inventoryInTransactions: many(inventoryInTransactions),
-    // inventoryOutTransactions: many(inventoryOutTransactions)
+    sales: many(sales),
 }));
 
 export const products = sqliteTable("products", {
@@ -47,7 +46,9 @@ export const productsRelations = relations(products, ({ one, many }) => ({
     }),
     productCategories: many(productCategories),
     purchaseItems: many(purchaseItems),
-    manageStocks: many(manageStocks)
+    manageStocks: many(manageStocks),
+    saleItems: many(saleItems),
+    transferItems: many(transferItems)
 }));
 
 
@@ -120,7 +121,10 @@ export const warehouses = sqliteTable("warehouses", {
 
 export const warehousesRelations = relations(warehouses, ({ many }) => ({
     purchases: many(purchases),
-    manageStocks: many(manageStocks)
+    manageStocks: many(manageStocks),
+    sales: many(sales),
+    toTransfer: many(transfers),
+    fromTransfer: many(transfers),
 }));
 
 export const suppliers = sqliteTable("suppliers", {
@@ -138,9 +142,27 @@ export const suppliersRelations = relations(suppliers, ({ many }) => ({
     purchases: many(purchases)
 }));
 
+export const customers = sqliteTable("customers", {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    name: text("name", { length: 256 }).notNull(),
+    phone: text("phone", { length: 256 }),
+    email: text("email", { length: 256 }),
+    city: text("city", { length: 256 }),
+    address: text("address", { length: 256 }),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+});
+
+export const customersRelations = relations(customers, ({ many }) => ({
+    sales: many(sales)
+}));
+
+
 export const purchases = sqliteTable("purchases", {
     id: integer("id").primaryKey({ autoIncrement: true }),
     date: integer("date").notNull(),
+    refCode: text("ref_code", { length: 256 }),
+    note: text("note", { length: 256 }),
     status: integer("status").notNull(),
     amount: integer("amount").notNull(),
     shipping: integer("shipping").notNull(),
@@ -165,6 +187,7 @@ export const purchasesRelations = relations(purchases, ({ one, many }) => ({
 export const purchaseItems = sqliteTable("purchaseItems", {
     id: integer("id").primaryKey({ autoIncrement: true }),
     quantity: integer("quantity").notNull(),
+    productCost: integer("product_cost").notNull(),
     subTotal: integer("sub_total").notNull(),
     productId: integer("product_id").references(() => products.id),
     purchaseId: integer("purchase_id").references(() => purchases.id),
@@ -202,5 +225,104 @@ export const manageStocksRelations = relations(manageStocks, ({ one }) => ({
         fields: [manageStocks.warehouseId],
         references: [warehouses.id]
     }),
+}));
+
+export const sales = sqliteTable("sales", {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    date: integer("date").notNull(),
+    note: text("note", { length: 256 }),
+    status: integer("status").notNull(),
+    amount: integer("amount").notNull(),
+    shipping: integer("shipping").notNull(),
+    warehouseId: integer("warehouse_id").references(() => warehouses.id),
+    userId: integer("user_id").references(() => users.id),
+    customerId: integer("customer_id").references(() => customers.id),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+});
+
+export const salesRelations = relations(sales, ({ one, many }) => ({
+    warehouse: one(warehouses, {
+        fields: [sales.warehouseId],
+        references: [warehouses.id]
+    }),
+    customer: one(customers, {
+        fields: [sales.customerId],
+        references: [customers.id]
+    }),
+    user: one(users, {
+        fields: [sales.userId],
+        references: [users.id]
+    }),
+    saleItems: many(saleItems),
+}));
+
+export const saleItems = sqliteTable("saleItems", {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    quantity: integer("quantity").notNull(),
+    productPrice: integer("product_price").notNull(),
+    subTotal: integer("sub_total").notNull(),
+    productId: integer("product_id").references(() => products.id),
+    saleId: integer("sale_id").references(() => sales.id),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+});
+
+export const saleItemsRelations = relations(saleItems, ({ one }) => ({
+    product: one(products, {
+        fields: [saleItems.productId],
+        references: [products.id]
+    }),
+    sale: one(sales, {
+        fields: [saleItems.saleId],
+        references: [sales.id]
+    })
+}));
+
+export const transfers = sqliteTable("transfers", {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    date: integer("date").notNull(),
+    note: text("note", { length: 256 }),
+    status: integer("status").notNull(),
+    amount: integer("amount").notNull(),
+    shipping: integer("shipping").notNull(),
+    fromWarehouseId: integer("from_warehouse_id").references(() => warehouses.id),
+    toWarehouseId: integer("to_warehouse_id").references(() => warehouses.id),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+});
+
+export const transfersRelations = relations(transfers, ({ one, many }) => ({
+    fromWarehouse: one(warehouses, {
+        fields: [transfers.fromWarehouseId],
+        references: [warehouses.id]
+    }),
+    toWarehouse: one(warehouses, {
+        fields: [transfers.toWarehouseId],
+        references: [warehouses.id]
+    }),
+    transferItems: many(transferItems),
+}));
+
+export const transferItems = sqliteTable("transferItems", {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    quantity: integer("quantity").notNull(),
+    productPrice: integer("product_price").notNull(),
+    subTotal: integer("sub_total").notNull(),
+    productId: integer("product_id").references(() => products.id),
+    transferId: integer("transfer_id").references(() => transfers.id),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+});
+
+export const transferItemsRelations = relations(transferItems, ({ one }) => ({
+    product: one(products, {
+        fields: [transferItems.productId],
+        references: [products.id]
+    }),
+    transferId: one(transfers, {
+        fields: [transferItems.transferId],
+        references: [transfers.id]
+    })
 }));
 
