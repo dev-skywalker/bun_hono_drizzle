@@ -1,23 +1,31 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { checkPermissions } from "../../middleware/check_permission";
 import { Env } from "../../config/env";
 import { saleSchema } from "./sale_schema";
-import { createSale, deleteAllSales, deleteSale, getAllSales, getPaginateSales, updateSale } from "./sale_controller";
+import { createSaleWithItems, deleteAllSales, deleteSale, getAllSales, getPaginateSales, getSaleDetails, getSaleWithItems, updateSale, updateSaleWithItems } from "./sale_controller";
+import { checkAuth } from "../../middleware/check_permission";
 
 const saleRoutes = new Hono<{ Bindings: Env }>();
 
-saleRoutes.post("/", zValidator("json", saleSchema), createSale)
+//saleRoutes.post("/", zValidator("json", saleSchema), createSale)
 
-saleRoutes.put("/", updateSale)
+saleRoutes.post("/items", checkAuth(), createSaleWithItems)
 
-saleRoutes.get('/all', getAllSales)
+saleRoutes.put("/", checkAuth(), updateSale)
 
-saleRoutes.get('/', getPaginateSales)
+saleRoutes.put("/items", checkAuth(), updateSaleWithItems)
 
-saleRoutes.delete("/", deleteSale)
+saleRoutes.get('/all', checkAuth(), getAllSales)
 
-saleRoutes.delete("/all", deleteAllSales)
+saleRoutes.get('/', checkAuth(), getPaginateSales)
+
+saleRoutes.get('/:id', checkAuth(), getSaleDetails)
+
+saleRoutes.get('/items/:id', checkAuth(), getSaleWithItems)
+
+saleRoutes.delete("/", checkAuth(), deleteSale)
+
+saleRoutes.delete("/all", checkAuth(), deleteAllSales)
 
 export default saleRoutes;
 

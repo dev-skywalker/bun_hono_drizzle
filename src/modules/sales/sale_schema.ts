@@ -7,6 +7,6 @@ export const saleSchema = z.object({
     note: z.string().optional(),
     shipping: z.number(),
     warehouseId: z.number(),
-    supplierId: z.number(),
+    customerId: z.number(),
     userId: z.number(),
 });

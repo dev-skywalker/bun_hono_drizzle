@@ -1,23 +1,30 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { checkPermissions } from "../../middleware/check_permission";
 import { Env } from "../../config/env";
 import { transferSchema } from "./transfer_schema";
-import { createTransfer, deleteAllTransfers, deleteTransfer, getAllTransfers, getPaginateTransfers, updateTransfer } from "./transfer_controller";
+import { createLostDamagedItem, createTransfer, createTransferWithItems, deleteAllTransfers, deleteTransfer, getAllTransfers, getPaginateTransfers, getTransferWithItems, updateTransfer } from "./transfer_controller";
+import { createTransferItem } from "../transferItem/transfer_item_controller";
+import { checkAuth } from "../../middleware/check_permission";
 
 const transferRoutes = new Hono<{ Bindings: Env }>();
 
-transferRoutes.post("/", zValidator("json", transferSchema), createTransfer)
+transferRoutes.post("/", checkAuth(), zValidator("json", transferSchema), createTransfer)
 
-transferRoutes.put("/", updateTransfer)
+transferRoutes.post("/items", checkAuth(), createTransferWithItems)
 
-transferRoutes.get('/all', getAllTransfers)
+transferRoutes.post("/lost", checkAuth(), createLostDamagedItem)
 
-transferRoutes.get('/', getPaginateTransfers)
+transferRoutes.get('/:id', checkAuth(), getTransferWithItems)
 
-transferRoutes.delete("/", deleteTransfer)
+transferRoutes.put("/", checkAuth(), updateTransfer)
 
-transferRoutes.delete("/all", deleteAllTransfers)
+transferRoutes.get('/all', checkAuth(), getAllTransfers)
+
+transferRoutes.get('/', checkAuth(), getPaginateTransfers)
+
+transferRoutes.delete("/", checkAuth(), deleteTransfer)
+
+transferRoutes.delete("/all", checkAuth(), deleteAllTransfers)
 
 export default transferRoutes;
 

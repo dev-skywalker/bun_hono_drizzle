@@ -14,6 +14,7 @@ export const createSaleItem = async (c: Context<{ Bindings: Env }>) => {
         subTotal: subTotal,
         productId: productId,
         saleId: saleId,
+        profit: 0,
         createdAt: Date.now(),
         updatedAt: Date.now()
     }

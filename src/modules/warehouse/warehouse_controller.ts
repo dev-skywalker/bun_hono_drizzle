@@ -60,6 +60,18 @@ export const updateWarehouse = async (c: Context<{ Bindings: Env }>) => {
     return c.json(updateWarehouse[0]);
 }
 
+export const getWarehouse = async (c: Context) => {
+    const { id } = c.req.param();
+    const db = drizzle(c.env.DB);
+
+    const query = await db.select().from(warehouses).where(eq(warehouses.id, Number(id)));
+    if (query.length === 0) {
+        c.status(404);
+        return c.json({ message: "Warehouse not found" });
+    }
+    return c.json(query[0])
+}
+
 export const getAllWarehouses = async (c: Context) => {
     const db = drizzle(c.env.DB);
     const result = await db.select().from(warehouses).all();

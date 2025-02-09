@@ -1,23 +1,30 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { checkPermissions } from "../../middleware/check_permission";
 import { Env } from "../../config/env";
 import { purchaseSchema } from "./purchase_schema";
-import { createPurchase, deleteAllPurchases, deletePurchase, getAllPurchases, getPaginatePurchases, updatePurchase } from "./purchase_controller";
+import { createPurchase, createPurchaseWithItems, deleteAllPurchases, deletePurchase, getAllPurchases, getPaginatePurchases, getPurchaseWithItems, updatePurchase, updatePurchaseWithItems } from "./purchase_controller";
+import { checkAuth } from "../../middleware/check_permission";
 
 const purchaseRoutes = new Hono<{ Bindings: Env }>();
 
-purchaseRoutes.post("/", zValidator("json", purchaseSchema), createPurchase)
+purchaseRoutes.post("/", checkAuth(), zValidator("json", purchaseSchema), createPurchase)
 
-purchaseRoutes.put("/", updatePurchase)
 
-purchaseRoutes.get('/all', getAllPurchases)
+purchaseRoutes.post("/items", checkAuth(), createPurchaseWithItems)
 
-purchaseRoutes.get('/', getPaginatePurchases)
+purchaseRoutes.put("/", checkAuth(), updatePurchase)
 
-purchaseRoutes.delete("/", deletePurchase)
+purchaseRoutes.put("/items", checkAuth(), updatePurchaseWithItems)
 
-purchaseRoutes.delete("/all", deleteAllPurchases)
+purchaseRoutes.get('/all', checkAuth(), getAllPurchases)
+
+purchaseRoutes.get('/', checkAuth(), getPaginatePurchases)
+
+purchaseRoutes.get('/:id', checkAuth(), getPurchaseWithItems)
+
+purchaseRoutes.delete("/", checkAuth(), deletePurchase)
+
+purchaseRoutes.delete("/all", checkAuth(), deleteAllPurchases)
 
 export default purchaseRoutes;
 

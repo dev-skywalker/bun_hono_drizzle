@@ -17,13 +17,18 @@ import saleRoutes from './modules/sales/sale_route';
 import saleItemRoutes from './modules/saleItem/sale_item_route';
 import transferRoutes from './modules/transfers/transfer_route';
 import transferItemRoutes from './modules/transferItem/transfer_item_route';
+import reportRoutes from './modules/reports/report_route';
+import lostDamageRoutes from './modules/lostDamageItem/lost_damage_route';
+import saleReturnRoutes from './modules/saleReturn/sale_return_route';
+import purchaseReturnRoutes from './modules/purchaseReturn/purchase_return_route';
+import paymentTypeRoutes from './modules/paymentType/payment_type_route';
 
 const app = new Hono().basePath('/api');
 
 app.use('*', cors({
-  origin: 'http://localhost:58160',
+  origin: 'https://ssp.pyaesone.com',
   allowHeaders: ['Content-Type', 'Authorization'],
-  allowMethods: ['POST', 'GET', 'OPTIONS'],
+  allowMethods: ['POST', 'GET', 'PUT', 'DELETE'],
   exposeHeaders: ['Content-Length'],
   maxAge: 600,
   credentials: true,
@@ -47,9 +52,14 @@ app.route('/customers', customerRoutes)
 app.route('/purchases', purchaseRoutes)
 app.route('/purchase_items', purchaseItemRoutes)
 app.route('/sales', saleRoutes)
+app.route('/reports', reportRoutes)
 app.route('/sale_items', saleItemRoutes)
 app.route('/transfers', transferRoutes)
+app.route('/lost_damage', lostDamageRoutes)
+app.route('/sale_return', saleReturnRoutes)
+app.route('/purchase_return', purchaseReturnRoutes)
 app.route('/transfer_items', transferItemRoutes)
+app.route('/payment_type', paymentTypeRoutes)
 app.route('/manage_stocks', manageStockRoutes)
 app.route('/product_category', productCategoryRoutes)
 app.route('/image', imageRoutes)

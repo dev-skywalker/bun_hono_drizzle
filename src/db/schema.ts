@@ -7,12 +7,18 @@ export const users = sqliteTable('users', {
     password: text('password').notNull(),
     role: text('role').notNull(),
     isActive: integer('is_active', { mode: 'boolean' }),
+    warehouseId: integer("warehouseId").references(() => warehouses.id),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),
 });
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
     sales: many(sales),
+    posSessions: many(posSessions),
+    warehouse: one(warehouses, {
+        fields: [users.warehouseId],
+        references: [warehouses.id]
+    }),
 }));
 
 export const products = sqliteTable("products", {
@@ -48,7 +54,10 @@ export const productsRelations = relations(products, ({ one, many }) => ({
     purchaseItems: many(purchaseItems),
     manageStocks: many(manageStocks),
     saleItems: many(saleItems),
-    transferItems: many(transferItems)
+    transferItems: many(transferItems),
+    lostDamagedItems: many(lostDamagedItems),
+    salesReturnItems: many(salesReturnItems),
+    purchaseReturnItems: many(purchaseReturnItems)
 }));
 
 
@@ -125,6 +134,8 @@ export const warehousesRelations = relations(warehouses, ({ many }) => ({
     sales: many(sales),
     toTransfer: many(transfers),
     fromTransfer: many(transfers),
+    lostDamagedItems: many(lostDamagedItems),
+    posSessions: many(posSessions)
 }));
 
 export const suppliers = sqliteTable("suppliers", {
@@ -164,9 +175,11 @@ export const purchases = sqliteTable("purchases", {
     refCode: text("ref_code", { length: 256 }),
     note: text("note", { length: 256 }),
     status: integer("status").notNull(),
+    paymentStatus: integer("payment_status").notNull(),
     amount: integer("amount").notNull(),
     shipping: integer("shipping").notNull(),
     warehouseId: integer("warehouse_id").references(() => warehouses.id),
+    paymentTypeId: integer("payment_type_id").references(() => paymentType.id),
     supplierId: integer("supplier_id").references(() => suppliers.id),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),
@@ -180,6 +193,10 @@ export const purchasesRelations = relations(purchases, ({ one, many }) => ({
     supplier: one(suppliers, {
         fields: [purchases.supplierId],
         references: [suppliers.id]
+    }),
+    paymentType: one(paymentType, {
+        fields: [purchases.paymentTypeId],
+        references: [paymentType.id]
     }),
     purchaseItems: many(purchaseItems),
 }));
@@ -232,9 +249,15 @@ export const sales = sqliteTable("sales", {
     date: integer("date").notNull(),
     note: text("note", { length: 256 }),
     status: integer("status").notNull(),
+    paymentStatus: integer("payment_status").notNull(),
     amount: integer("amount").notNull(),
+    discount: integer("discount").notNull(),
+    taxPercent: integer("tax_percent").notNull(),
+    taxAmount: integer("tax_amount").notNull().default(0),
+    totalAmount: integer("total_amount").notNull(),
     shipping: integer("shipping").notNull(),
     warehouseId: integer("warehouse_id").references(() => warehouses.id),
+    paymentTypeId: integer("payment_type_id").references(() => paymentType.id),
     userId: integer("user_id").references(() => users.id),
     customerId: integer("customer_id").references(() => customers.id),
     createdAt: integer("created_at").notNull(),
@@ -250,17 +273,24 @@ export const salesRelations = relations(sales, ({ one, many }) => ({
         fields: [sales.customerId],
         references: [customers.id]
     }),
+    paymentType: one(paymentType, {
+        fields: [sales.paymentTypeId],
+        references: [paymentType.id]
+    }),
     user: one(users, {
         fields: [sales.userId],
         references: [users.id]
     }),
     saleItems: many(saleItems),
+    saleReturn: many(salesReturn)
 }));
 
 export const saleItems = sqliteTable("saleItems", {
     id: integer("id").primaryKey({ autoIncrement: true }),
     quantity: integer("quantity").notNull(),
     productPrice: integer("product_price").notNull(),
+    productCost: integer("product_cost").notNull(),
+    profit: integer("profit").notNull(),
     subTotal: integer("sub_total").notNull(),
     productId: integer("product_id").references(() => products.id),
     saleId: integer("sale_id").references(() => sales.id),
@@ -323,6 +353,148 @@ export const transferItemsRelations = relations(transferItems, ({ one }) => ({
     transferId: one(transfers, {
         fields: [transferItems.transferId],
         references: [transfers.id]
+    })
+}));
+
+export const lostDamagedItems = sqliteTable("lostDamagedItems", {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    warehouseId: integer("warehouseId").notNull().references(() => warehouses.id),
+    productId: integer("productId").notNull().references(() => products.id),
+    quantity: integer("quantity").notNull(),
+    amount: integer("amount").notNull(),
+    reason: text("reason"),  // E.g., "damaged", "lost"
+    note: text("note"),       // Additional details if needed
+    createdAt: integer("createdAt").notNull(),
+    updatedAt: integer("updatedAt").notNull(),
+});
+
+
+export const lostDamagedItemsRelations = relations(lostDamagedItems, ({ one }) => ({
+    product: one(products, {
+        fields: [lostDamagedItems.productId],
+        references: [products.id]
+    }),
+    warehouse: one(warehouses, {
+        fields: [lostDamagedItems.warehouseId],
+        references: [warehouses.id]
+    })
+}));
+
+export const salesReturn = sqliteTable("salesReturn", {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    saleId: integer("saleId").notNull().references(() => sales.id),
+    date: integer("date").notNull(), // Timestamp of the return
+    totalAmount: integer("totalAmount").notNull(), // Total amount for returned items
+    note: text("note").default(""),
+    status: integer("status").notNull(), // e.g., 1 for pending, 2 for processed
+    createdAt: integer("createdAt").notNull(),
+    updatedAt: integer("updatedAt").notNull(),
+});
+
+export const salesReturnRelations = relations(salesReturn, ({ one, many }) => ({
+    sales: one(sales, {
+        fields: [salesReturn.saleId],
+        references: [sales.id]
+    }),
+    salesReturnItems: many(salesReturnItems)
+}));
+
+export const salesReturnItems = sqliteTable("salesReturnItems", {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    salesReturnId: integer("salesReturnId").notNull().references(() => salesReturn.id),
+    productId: integer("productId").notNull().references(() => products.id),
+    quantity: integer("quantity").notNull(),
+    productCost: integer("product_cost").notNull(),
+    productPrice: integer("productPrice").notNull(),
+    subTotal: integer("subTotal").notNull(),
+    createdAt: integer("createdAt").notNull(),
+    updatedAt: integer("updatedAt").notNull(),
+});
+
+export const salesReturnItemsRelations = relations(salesReturnItems, ({ one }) => ({
+    product: one(products, {
+        fields: [salesReturnItems.productId],
+        references: [products.id]
+    }),
+    salesReturn: one(salesReturn, {
+        fields: [salesReturnItems.salesReturnId],
+        references: [salesReturn.id]
+    })
+}));
+
+
+export const purchaseReturn = sqliteTable("purchaseReturn", {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    purchaseId: integer("purchaseId").notNull().references(() => purchases.id),
+    date: integer("date").notNull(), // Timestamp of the return
+    totalAmount: integer("totalAmount").notNull(), // Total amount for returned items
+    note: text("note").default(""),
+    status: integer("status").notNull(), // e.g., 1 for pending, 2 for processed
+    createdAt: integer("createdAt").notNull(),
+    updatedAt: integer("updatedAt").notNull(),
+});
+
+export const purchaseReturnRelations = relations(purchaseReturn, ({ one, many }) => ({
+    purchase: one(purchases, {
+        fields: [purchaseReturn.purchaseId],
+        references: [purchases.id]
+    }),
+    purchaseReturnItems: many(purchaseReturnItems)
+}));
+
+export const purchaseReturnItems = sqliteTable("purchaseReturnItems", {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    purchaseReturnId: integer("purchaseReturnId").notNull().references(() => purchaseReturn.id),
+    productId: integer("productId").notNull().references(() => products.id),
+    quantity: integer("quantity").notNull(),
+    productCost: integer("productCost").notNull(),
+    subTotal: integer("subTotal").notNull(),
+    createdAt: integer("createdAt").notNull(),
+    updatedAt: integer("updatedAt").notNull(),
+});
+
+export const purchaseReturnItemsRelations = relations(purchaseReturnItems, ({ one }) => ({
+    product: one(products, {
+        fields: [purchaseReturnItems.productId],
+        references: [products.id]
+    }),
+    purchaseReturn: one(purchaseReturn, {
+        fields: [purchaseReturnItems.purchaseReturnId],
+        references: [purchaseReturn.id]
+    })
+}));
+
+export const paymentType = sqliteTable("paymentType", {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    name: text("name", { length: 256 }).notNull(),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+});
+
+export const paymentTypeRelations = relations(paymentType, ({ many }) => ({
+    sales: many(sales),
+    purchases: many(purchases)
+}));
+
+const posSessions = sqliteTable("posSessions", {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    userId: integer("userId").references(() => users.id),
+    warehouseId: integer("warehouse_id").references(() => warehouses.id).notNull(),
+    openingTime: integer("opening_time").notNull(),
+    closingTime: integer("closing_time"),
+    openingAmount: integer("opening_amount").notNull(),
+    closingAmount: integer("closing_amount"),
+    isActive: integer('is_active', { mode: 'boolean' }).default(true),
+});
+
+export const posSessionsRelations = relations(posSessions, ({ one }) => ({
+    warehouse: one(warehouses, {
+        fields: [posSessions.warehouseId],
+        references: [warehouses.id]
+    }),
+    user: one(users, {
+        fields: [posSessions.userId],
+        references: [users.id]
     })
 }));
 

@@ -5,36 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1725009524109,
-      "tag": "0000_round_selene",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1725599594015,
-      "tag": "0001_public_hardball",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1725976195075,
-      "tag": "0002_calm_wallow",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1725978488572,
-      "tag": "0003_dapper_weapon_omega",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1725985480431,
-      "tag": "0004_thin_blink",
+      "when": 1733066865106,
+      "tag": "0000_illegal_madrox",
       "breakpoints": true
     }
   ]

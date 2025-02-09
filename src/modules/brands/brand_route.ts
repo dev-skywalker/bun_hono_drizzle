@@ -1,23 +1,25 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { checkPermissions } from "../../middleware/check_permission";
 import { Env } from "../../config/env";
 import { brandSchema } from "./brand_schema";
-import { createBrand, deleteAllBands, deleteBrand, getAllBrands, getPaginateBrands, updateBrand } from "./brand_controller";
+import { createBrand, deleteAllBands, deleteBrand, getAllBrands, getBrand, getPaginateBrands, updateBrand } from "./brand_controller";
+import { checkAuth } from "../../middleware/check_permission";
 
 const brandRoutes = new Hono<{ Bindings: Env }>();
 
-brandRoutes.post("/", zValidator("json", brandSchema), createBrand)
+brandRoutes.post("/", checkAuth(), zValidator("json", brandSchema), createBrand)
 
-brandRoutes.put("/", updateBrand)
+brandRoutes.put("/", checkAuth(), updateBrand)
 
-brandRoutes.get('/all', getAllBrands)
+brandRoutes.get('/all', checkAuth(), getAllBrands)
 
-brandRoutes.get('/', getPaginateBrands)
+brandRoutes.get('/', checkAuth(), getPaginateBrands)
 
-brandRoutes.delete("/", deleteBrand)
+brandRoutes.get('/:id', checkAuth(), getBrand)
 
-brandRoutes.delete("/all", deleteAllBands)
+brandRoutes.delete("/", checkAuth(), deleteBrand)
+
+brandRoutes.delete("/all", checkAuth(), deleteAllBands)
 
 export default brandRoutes;
 

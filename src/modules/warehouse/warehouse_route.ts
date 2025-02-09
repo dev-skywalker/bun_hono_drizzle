@@ -1,23 +1,25 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { checkPermissions } from "../../middleware/check_permission";
 import { Env } from "../../config/env";
 import { warehouseSchema } from "./warehouse_schema";
-import { createWarehouse, deleteAllWarehouses, deleteWarehouse, getAllWarehouses, getPaginateWarehouses, updateWarehouse } from "./warehouse_controller";
+import { createWarehouse, deleteAllWarehouses, deleteWarehouse, getAllWarehouses, getPaginateWarehouses, getWarehouse, updateWarehouse } from "./warehouse_controller";
+import { checkAuth } from "../../middleware/check_permission";
 
 const warehouseRoutes = new Hono<{ Bindings: Env }>();
 
-warehouseRoutes.post("/", zValidator("json", warehouseSchema), createWarehouse)
+warehouseRoutes.post("/", checkAuth(), zValidator("json", warehouseSchema), createWarehouse)
 
-warehouseRoutes.put("/", updateWarehouse)
+warehouseRoutes.put("/", checkAuth(), updateWarehouse)
 
-warehouseRoutes.get('/all', getAllWarehouses)
+warehouseRoutes.get('/all', checkAuth(), getAllWarehouses)
 
-warehouseRoutes.get('/', getPaginateWarehouses)
+warehouseRoutes.get('/', checkAuth(), getPaginateWarehouses)
 
-warehouseRoutes.delete("/", deleteWarehouse)
+warehouseRoutes.get('/:id', checkAuth(), getWarehouse)
 
-warehouseRoutes.delete("/all", deleteAllWarehouses)
+warehouseRoutes.delete("/", checkAuth(), deleteWarehouse)
+
+warehouseRoutes.delete("/all", checkAuth(), deleteAllWarehouses)
 
 export default warehouseRoutes;
 

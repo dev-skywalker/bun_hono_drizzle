@@ -60,6 +60,18 @@ export const updateCustomer = async (c: Context<{ Bindings: Env }>) => {
     return c.json(updateCustomer[0]);
 }
 
+export const getCustomer = async (c: Context) => {
+    const { id } = c.req.param();
+    const db = drizzle(c.env.DB);
+
+    const query = await db.select().from(customers).where(eq(customers.id, Number(id)));
+    if (query.length === 0) {
+        c.status(404);
+        return c.json({ message: "Customer not found" });
+    }
+    return c.json(query[0])
+}
+
 export const getAllCustomers = async (c: Context) => {
     const db = drizzle(c.env.DB);
     const result = await db.select().from(customers).all();

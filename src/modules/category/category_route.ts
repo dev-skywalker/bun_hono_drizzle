@@ -1,23 +1,25 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { checkPermissions } from "../../middleware/check_permission";
 import { Env } from "../../config/env";
 import { categorySchema } from "./category_schema";
-import { createCategory, deleteAllCategory, deleteCategory, getAllCategory, getPaginateCategory, updateCategory } from "./category_controller";
+import { createCategory, deleteAllCategory, deleteCategory, getAllCategory, getCategory, getPaginateCategory, updateCategory } from "./category_controller";
+import { checkAuth } from "../../middleware/check_permission";
 
 const categoryRoutes = new Hono<{ Bindings: Env }>();
 
-categoryRoutes.post("/", zValidator("json", categorySchema), createCategory)
+categoryRoutes.post("/", checkAuth(), zValidator("json", categorySchema), createCategory)
 
-categoryRoutes.put("/", updateCategory)
+categoryRoutes.put("/", checkAuth(), updateCategory)
 
-categoryRoutes.get('/all', getAllCategory)
+categoryRoutes.get('/all', checkAuth(), getAllCategory)
 
-categoryRoutes.get('/', getPaginateCategory)
+categoryRoutes.get('/', checkAuth(), getPaginateCategory)
 
-categoryRoutes.delete("/", deleteCategory)
+categoryRoutes.get('/:id', checkAuth(), getCategory)
 
-categoryRoutes.delete("/all", deleteAllCategory)
+categoryRoutes.delete("/", checkAuth(), deleteCategory)
+
+categoryRoutes.delete("/all", checkAuth(), deleteAllCategory)
 
 categoryRoutes.post('/test', async (c) => {
     const body = await c.req.parseBody({ all: true })

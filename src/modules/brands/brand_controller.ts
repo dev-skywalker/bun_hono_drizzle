@@ -50,6 +50,18 @@ export const updateBrand = async (c: Context<{ Bindings: Env }>) => {
     return c.json(updateBrand[0]);
 }
 
+export const getBrand = async (c: Context) => {
+    const { id } = c.req.param();
+    const db = drizzle(c.env.DB);
+
+    const query = await db.select().from(brands).where(eq(brands.id, Number(id)));
+    if (query.length === 0) {
+        c.status(404);
+        return c.json({ message: "Brand not found" });
+    }
+    return c.json(query[0])
+}
+
 export const getAllBrands = async (c: Context) => {
     const db = drizzle(c.env.DB);
     const result = await db.select().from(brands).all();

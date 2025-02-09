@@ -1,23 +1,25 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { checkPermissions } from "../../middleware/check_permission";
+import { checkAuth } from "../../middleware/check_permission";
 import { Env } from "../../config/env";
 import { unitSchema } from "./unit_schema";
-import { createUnit, deleteAllUnits, deleteUnit, getAllUnits, getPaginateUnits, updateUnit } from "./unit_controller";
+import { createUnit, deleteAllUnits, deleteUnit, getAllUnits, getPaginateUnits, getUnit, updateUnit } from "./unit_controller";
 
 const unitRoutes = new Hono<{ Bindings: Env }>();
 
-unitRoutes.post("/", zValidator("json", unitSchema), createUnit)
+unitRoutes.post("/", checkAuth(), zValidator("json", unitSchema), createUnit)
 
-unitRoutes.put("/", updateUnit)
+unitRoutes.put("/", checkAuth(), updateUnit)
 
-unitRoutes.get('/all', getAllUnits)
+unitRoutes.get('/all', checkAuth(), getAllUnits)
 
-unitRoutes.get('/', getPaginateUnits)
+unitRoutes.get('/', checkAuth(), getPaginateUnits)
 
-unitRoutes.delete("/", deleteUnit)
+unitRoutes.get('/:id', checkAuth(), getUnit)
 
-unitRoutes.delete("/all", deleteAllUnits)
+unitRoutes.delete("/", checkAuth(), deleteUnit)
+
+unitRoutes.delete("/all", checkAuth(), deleteAllUnits)
 
 export default unitRoutes;
 

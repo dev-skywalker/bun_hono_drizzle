@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/d1";
-import { manageStocks } from "../../db/schema";
-import { eq, like, sql } from "drizzle-orm";
+import { manageStocks, products, warehouses } from "../../db/schema";
+import { and, desc, eq, gt, like, sql } from "drizzle-orm";
 import { Context } from "hono";
 import { Env } from "../../config/env";
 
@@ -8,27 +8,59 @@ export const createManageStock = async (c: Context<{ Bindings: Env }>) => {
     const db = drizzle(c.env.DB);
     const { quantity, alert, productId, warehouseId } = await c.req.json();
 
-    const data = {
-        quantity: quantity,
-        alert: alert,
-        productId: productId,
-        warehouseId: warehouseId,
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-    }
+    const existingStock = await db
+        .select({ quantity: manageStocks.quantity })
+        .from(manageStocks)
+        .where(
+            and(eq(manageStocks.productId, productId),
+                eq(manageStocks.warehouseId, warehouseId))
+        );
 
-    // Insert new user
-    const newStock: any = await db.insert(manageStocks).values(data).returning({
-        id: manageStocks.id
-    });
-
-    if (newStock.length === 0) {
-        c.status(404);
-        return c.json({ message: "Unit not found" });
+    // If stock exists, update it
+    if (existingStock.length > 0) {
+        await db
+            .update(manageStocks)
+            .set({ quantity: existingStock[0].quantity + quantity })
+            .where(
+                and(eq(manageStocks.productId, productId),
+                    eq(manageStocks.warehouseId, warehouseId))
+            );
+    } else {
+        // If stock doesn't exist, create a new stock entry
+        await db.insert(manageStocks).values({
+            productId: productId,
+            warehouseId: warehouseId,
+            quantity: quantity,
+            alert: alert, // Set alert threshold for the stock, adjust as needed
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        });
     }
 
     c.status(201);
-    return c.json(newStock[0]);
+    return c.json({ status: "OK" });
+
+    // const data = {
+    //     quantity: quantity,
+    //     alert: alert,
+    //     productId: productId,
+    //     warehouseId: warehouseId,
+    //     createdAt: Date.now(),
+    //     updatedAt: Date.now()
+    // }
+
+    // // Insert new user
+    // const newStock: any = await db.insert(manageStocks).values(data).returning({
+    //     id: manageStocks.id
+    // });
+
+    // if (newStock.length === 0) {
+    //     c.status(404);
+    //     return c.json({ message: "Unit not found" });
+    // }
+
+    // c.status(201);
+    // return c.json(newStock[0]);
 }
 
 export const updateManageStock = async (c: Context<{ Bindings: Env }>) => {
@@ -56,6 +88,26 @@ export const updateManageStock = async (c: Context<{ Bindings: Env }>) => {
 
     c.status(200);
     return c.json(updateStock[0]);
+}
+
+export const getWarehouseStockLevels = async (c: Context) => {
+    const db = drizzle(c.env.DB);
+
+    const stockLevels = await db.select({
+        warehouseId: warehouses.id,
+        warehouseName: warehouses.name,
+        productId: products.id,
+        productName: products.name,
+        stockQuantity: manageStocks.quantity,
+    })
+        .from(manageStocks)
+        .innerJoin(warehouses, eq(manageStocks.warehouseId, warehouses.id))  // Join warehouses
+        .innerJoin(products, eq(manageStocks.productId, products.id))        // Join products
+        .where(gt(manageStocks.quantity, 0))                                 // Only include items with stock > 0
+        .orderBy(desc(manageStocks.quantity));                               // Order by stock quantity in descending order
+
+    c.status(200);
+    return c.json(stockLevels);
 }
 
 export const getAllManageStocks = async (c: Context) => {

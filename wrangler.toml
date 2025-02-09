@@ -1,14 +1,17 @@
-name = "bun_hono_drizzle"
+name = "ssp_pos"
 compatibility_date = "2023-12-01"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "bun_hono_drizzle_d1"
-database_id = "c4068445-fab1-433b-af74-8f055ac191ac"
+database_name = "test"
+database_id = "dc1f6b23-a0c2-4b71-a26b-f7aa92c8396b"
+# database_name = "pos"
+# database_id = "bb742c95-d2c7-49f3-a49e-0ce1fb53c129"
 
 [[r2_buckets]]
 binding = "MY_DATA"
 bucket_name = "mydata"
+
 
 [vars]
 MY_VAR = "my-variable"

@@ -48,6 +48,18 @@ export const updateCategory = async (c: Context<{ Bindings: Env }>) => {
     return c.json(updateCategory[0]);
 }
 
+export const getCategory = async (c: Context) => {
+    const { id } = c.req.param();
+    const db = drizzle(c.env.DB);
+
+    const query = await db.select().from(category).where(eq(category.id, Number(id)));
+    if (query.length === 0) {
+        c.status(404);
+        return c.json({ message: "Category not found" });
+    }
+    return c.json(query[0])
+}
+
 export const getAllCategory = async (c: Context) => {
     const db = drizzle(c.env.DB);
     const result = await db.select().from(category).all();
@@ -119,16 +131,6 @@ export const getPaginateCategory = async (c: Context) => {
         .offset(Number(offset));
 
     const results = await query.execute();
-
-    // Transform data
-    // const transformedData: any = {
-    //     totalRecords: totalRecords,
-    //     data: results.map((item: any) => ({
-    //         id: item.categorys.id,
-    //         name: item.categorys.name
-
-    //     })),
-    // };
 
     return c.json({ totalRecords: totalRecords, data: results });
 };

@@ -60,6 +60,18 @@ export const updateSupplier = async (c: Context<{ Bindings: Env }>) => {
     return c.json(updateSupplier[0]);
 }
 
+export const getSupplier = async (c: Context) => {
+    const { id } = c.req.param();
+    const db = drizzle(c.env.DB);
+
+    const query = await db.select().from(suppliers).where(eq(suppliers.id, Number(id)));
+    if (query.length === 0) {
+        c.status(404);
+        return c.json({ message: "Supplier not found" });
+    }
+    return c.json(query[0])
+}
+
 export const getAllSuppliers = async (c: Context) => {
     const db = drizzle(c.env.DB);
     const result = await db.select().from(suppliers).all();

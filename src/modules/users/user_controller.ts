@@ -7,7 +7,7 @@ import { Env } from "../../config/env";
 
 export const userRegister = async (c: Context<{ Bindings: Env }>) => {
     const db = drizzle(c.env.DB);
-    const { email, password, role, isActive } = await c.req.json();
+    const { email, password, role, isActive, warehouseId } = await c.req.json();
     const userExists = await db.select().from(users).where(eq(users.email, email));
     if (userExists[0]) {
         c.status(409);
@@ -28,6 +28,7 @@ export const userRegister = async (c: Context<{ Bindings: Env }>) => {
         password: hash,
         role: role,
         isActive: isActive,
+        warehouseId: warehouseId,
         createdAt: Date.now(),
         updatedAt: Date.now()
     }
@@ -63,12 +64,13 @@ export const userLogin = async (c: Context) => {
         userId: user[0].id,
         email: user[0].email,
         role: user[0].role,
+        warehouseId: user[0].warehouseId,
         exp: Math.floor(Date.now() / 1000) + 60 * 60,
     };
 
     const token = await sign(payload, "jwt-secret");
     //setCookie(c, "token", token);
-    return c.json({ token });
+    return c.json({ token, payload });
 }
 
 export const getAllUser = async (c: Context) => {
